@@ -1,0 +1,213 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bitcoin Live</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --text-color: #e0e0e0;
+      --card-bg: #1e1e1e;
+      --primary: #2196f3;
+      --accent: #64b5f6;
+    }
+    body.light {
+      --bg-color: #ffffff;
+      --text-color: #111;
+      --card-bg: #f2f2f2;
+    }
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      transition: background 0.3s, color 0.3s;
+    }
+    header {
+      background-color: var(--primary);
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      padding: 10px;
+      background-color: var(--card-bg);
+    }
+    nav a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.2);
+    }
+    h2 {
+      color: var(--accent);
+    }
+    input, button {
+      padding: 10px;
+      width: 100%;
+      margin-top: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+    }
+    button {
+      background-color: var(--primary);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    .faq-question {
+      background: var(--primary);
+      color: white;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .faq-answer {
+      display: none;
+      background: var(--card-bg);
+      padding: 10px;
+      border-left: 4px solid var(--accent);
+    }
+    footer {
+      text-align: center;
+      padding: 20px;
+      background: var(--card-bg);
+      color: gray;
+      margin-top: 30px;
+    }
+    .mode-toggle {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="dark">
+  <button class="mode-toggle" onclick="toggleMode()">Ganti Mode</button>
+  <header>
+    <h1>Apa Itu Bitcoin?</h1>
+  </header>
+  <nav>
+    <a href="#pengantar">Pengantar</a>
+    <a href="#kalkulator">Kalkulator</a>
+    <a href="#chart">Grafik</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+  <div class="container">
+    <section id="pengantar" class="card">
+      <h2>Pengenalan</h2>
+      <p>Bitcoin adalah mata uang kripto pertama yang diciptakan oleh Satoshi Nakamoto pada tahun 2009 dan menggunakan teknologi blockchain.</p>
+    </section>
+    <section id="kalkulator" class="card">
+      <h2>Kalkulator Harga Bitcoin (Live)</h2>
+      <p>Harga saat ini: <span id="live-price">Memuat...</span></p>
+      <input type="number" id="btc" placeholder="Masukkan jumlah BTC"/>
+      <button onclick="convertToIDR()">Konversi ke IDR</button>
+      <div class="result" id="result1"></div>
+      <input type="number" id="idr" placeholder="Masukkan jumlah IDR"/>
+      <button onclick="convertToBTC()">Konversi ke BTC</button>
+      <div class="result" id="result2"></div>
+    </section>
+    <section id="chart" class="card">
+      <h2>Grafik Harga Bitcoin (7 Hari Terakhir)</h2>
+      <canvas id="btcChart" height="100"></canvas>
+    </section>
+    <section id="faq" class="card">
+      <h2>FAQ Bitcoin</h2>
+      <div class="faq-question">Apa itu blockchain?</div>
+      <div class="faq-answer">Blockchain adalah sistem pencatatan digital yang aman dan transparan.</div>
+      <div class="faq-question">Apakah Bitcoin legal di Indonesia?</div>
+      <div class="faq-answer">Bitcoin legal sebagai aset investasi, tapi bukan alat pembayaran resmi.</div>
+      <div class="faq-question">Bagaimana membeli Bitcoin?</div>
+      <div class="faq-answer">Melalui exchange seperti Indodax, Tokocrypto, atau Binance setelah verifikasi.</div>
+    </section>
+  </div>
+  <footer>
+    &copy; 2025 Edukasi Bitcoin. Data dari CoinGecko.
+  </footer>
+  <script>
+    let btcPrice = 0;
+    async function fetchPrice() {
+      const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=idr");
+      const data = await res.json();
+      btcPrice = data.bitcoin.idr;
+      document.getElementById("live-price").textContent = "Rp " + btcPrice.toLocaleString("id-ID");
+    }
+    async function fetchChart() {
+      const res = await fetch("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=idr&days=7");
+      const data = await res.json();
+      const labels = data.prices.map(p => new Date(p[0]).toLocaleDateString());
+      const prices = data.prices.map(p => p[1]);
+      new Chart(document.getElementById("btcChart").getContext("2d"), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Harga Bitcoin (IDR)',
+            data: prices,
+            borderColor: '#64b5f6',
+            backgroundColor: 'rgba(100,181,246,0.1)',
+            borderWidth: 2,
+            tension: 0.3
+          }]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: false }
+          }
+        }
+      });
+    }
+    function convertToIDR() {
+      const btc = parseFloat(document.getElementById("btc").value);
+      const idr = btc * btcPrice;
+      document.getElementById("result1").textContent = isNaN(idr) ? "" : `Rp ${idr.toLocaleString("id-ID")}`;
+    }
+    function convertToBTC() {
+      const idr = parseFloat(document.getElementById("idr").value);
+      const btc = idr / btcPrice;
+      document.getElementById("result2").textContent = isNaN(btc) ? "" : `${btc.toFixed(8)} BTC`;
+    }
+    function toggleMode() {
+      document.body.classList.toggle("light");
+    }
+    document.querySelectorAll(".faq-question").forEach(q => {
+      q.addEventListener("click", () => {
+        const a = q.nextElementSibling;
+        a.style.display = a.style.display === "block" ? "none" : "block";
+      });
+    });
+    fetchPrice();
+    fetchChart();
+  </script>
+</body>
+</html>
